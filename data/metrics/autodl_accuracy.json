@@ -1,0 +1,36 @@
+{
+  "platform": "autodl-container-c6c3469f40-ef66eb74",
+  "experiment": "correctness",
+  "params": {
+    "N": 2000,
+    "nsteps": 200,
+    "dt": 1e-05
+  },
+  "results": {
+    "exact_theta0": {
+      "max_error": 1.11e-16,
+      "mean_error": 2.06e-19,
+      "raw": "Alignment Strategy: mass\nMax Position Error: 1.11e-16\nMean Position Error: 2.06e-19\n\u2705 Precision Check Passed\n"
+    },
+    "theta_sweep": [
+      {
+        "max_error": 5.88e-09,
+        "mean_error": 8.38e-10,
+        "raw": "Alignment Strategy: mass\nMax Position Error: 5.88e-09\nMean Position Error: 8.38e-10\n\u2705 Precision Check Passed\n",
+        "theta": 0.2
+      },
+      {
+        "max_error": 7.18e-08,
+        "mean_error": 8.56e-09,
+        "raw": "Alignment Strategy: mass\nMax Position Error: 7.18e-08\nMean Position Error: 8.56e-09\n\u2705 Precision Check Passed\n",
+        "theta": 0.5
+      },
+      {
+        "max_error": 1.03e-05,
+        "mean_error": 6.46e-08,
+        "raw": "Alignment Strategy: mass\nMax Position Error: 1.03e-05\nMean Position Error: 6.46e-08\n\u2705 Precision Check Passed\n",
+        "theta": 1.0
+      }
+    ]
+  }
+}

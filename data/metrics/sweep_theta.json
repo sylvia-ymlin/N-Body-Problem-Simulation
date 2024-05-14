@@ -1,0 +1,83 @@
+[
+    {
+        "runtime": 3.25,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.1,
+        "N": 100000
+    },
+    {
+        "runtime": 1.07,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.2,
+        "N": 100000
+    },
+    {
+        "runtime": 0.53,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.3,
+        "N": 100000
+    },
+    {
+        "runtime": 0.34,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.4,
+        "N": 100000
+    },
+    {
+        "runtime": 0.26,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.5,
+        "N": 100000
+    },
+    {
+        "runtime": 0.21,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.6,
+        "N": 100000
+    },
+    {
+        "runtime": 0.17,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.7,
+        "N": 100000
+    },
+    {
+        "runtime": 0.15,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.8,
+        "N": 100000
+    },
+    {
+        "runtime": 0.13,
+        "force_time": 0.0,
+        "tree_time": 0.0,
+        "kmeans_time": 0.0,
+        "schedule": null,
+        "theta": 0.9,
+        "N": 100000
+    }
+]

@@ -1,0 +1,87 @@
+{
+  "platform": "autodl-container-c6c3469f40-ef66eb74",
+  "experiment": "locality_ablation",
+  "params": {
+    "N": 100000,
+    "nsteps": 200,
+    "dt": 1e-05,
+    "threads": 1,
+    "theta": 0.5,
+    "repeats": 5,
+    "discard_warmup": 1
+  },
+  "results": [
+    {
+      "label": "morton",
+      "k": 0,
+      "trials": [
+        63.59,
+        63.65,
+        63.8,
+        64.08,
+        63.27
+      ],
+      "median_after_warmup": 63.724999999999994
+    },
+    {
+      "label": "kmeans_2",
+      "k": 2,
+      "trials": [
+        88.67,
+        88.44,
+        89.52,
+        88.6,
+        88.36
+      ],
+      "median_after_warmup": 88.52
+    },
+    {
+      "label": "kmeans_4",
+      "k": 4,
+      "trials": [
+        85.04,
+        85.02,
+        84.09,
+        84.5,
+        83.84
+      ],
+      "median_after_warmup": 84.295
+    },
+    {
+      "label": "kmeans_8",
+      "k": 8,
+      "trials": [
+        80.95,
+        81.34,
+        81.37,
+        80.82,
+        81.14
+      ],
+      "median_after_warmup": 81.24000000000001
+    },
+    {
+      "label": "kmeans_16",
+      "k": 16,
+      "trials": [
+        78.9,
+        78.67,
+        78.61,
+        78.84,
+        78.96
+      ],
+      "median_after_warmup": 78.755
+    },
+    {
+      "label": "kmeans_32",
+      "k": 32,
+      "trials": [
+        73.21,
+        73.45,
+        73.43,
+        73.06,
+        73.39
+      ],
+      "median_after_warmup": 73.41
+    }
+  ]
+}

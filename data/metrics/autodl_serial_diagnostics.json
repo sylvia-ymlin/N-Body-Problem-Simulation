@@ -1,0 +1,67 @@
+{
+  "platform": "autodl-container-c6c3469f40-ef66eb74",
+  "experiment": "serial_diagnostics",
+  "params": {
+    "N": 10000,
+    "nsteps": 200,
+    "dt": 1e-05,
+    "threads": 1,
+    "theta": 0.5,
+    "repeats": 5,
+    "discard_warmup": 1
+  },
+  "results": [
+    {
+      "label": "v1_naive_10k",
+      "trials": [
+        86.19,
+        86.12,
+        85.97,
+        86.19,
+        86.09
+      ],
+      "median_after_warmup": 86.105,
+      "version": 1,
+      "N": 10000
+    },
+    {
+      "label": "v2_barnes_hut_10k",
+      "trials": [
+        11.05,
+        11.07,
+        11.04,
+        11.08,
+        11.05
+      ],
+      "median_after_warmup": 11.06,
+      "version": 2,
+      "N": 10000
+    },
+    {
+      "label": "v3_arena_10k",
+      "trials": [
+        10.73,
+        10.67,
+        10.65,
+        10.63,
+        10.73
+      ],
+      "median_after_warmup": 10.66,
+      "version": 3,
+      "N": 10000
+    },
+    {
+      "label": "v4_morton_10k",
+      "trials": [
+        5.11,
+        5.19,
+        5.1,
+        5.09,
+        5.15
+      ],
+      "median_after_warmup": 5.125,
+      "version": 4,
+      "N": 10000
+    }
+  ]
+}
