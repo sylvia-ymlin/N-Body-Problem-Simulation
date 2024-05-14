@@ -1,0 +1,41 @@
+# Build artifacts
+build/
+*.o
+*.out
+simulate
+
+# Data & Results
+data/inputs/*
+!data/inputs/.gitkeep
+data/outputs/*
+!data/outputs/.gitkeep
+*.gal
+*.gif
+*.bin
+
+# Documentation & Other
+*.pdf
+*.md
+!README.md
+!docs/*.md
+
+# IDE
+.vscode/
+.DS_Store
+
+# Python & C++ Artifacts
+__pycache__/
+*.dSYM/
+.cache/
+
+# Local Build Metadata (containing absolute paths)
+compile_commands.json
+CMakeCache.txt
+
+# Personal & Career Documents (Privacy)
+docs/RESUME_BULLETS.md
+docs/CV_PERSPECTIVES.md
+personal_*
+private_*
+private_interview_notes.md
+.env

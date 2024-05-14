@@ -1,0 +1,139 @@
+{
+  "platform": "autodl-container-c6c3469f40-ef66eb74",
+  "experiment": "schedule_ablation",
+  "params": {
+    "N": 100000,
+    "nsteps": 1,
+    "dt": 1e-05,
+    "threads": 16,
+    "theta": 0.5,
+    "chunk": 128,
+    "repeats": 5,
+    "discard_warmup": 1
+  },
+  "results": [
+    {
+      "label": "schedule_static_128",
+      "trials": [
+        0.15,
+        0.13,
+        0.15,
+        0.14,
+        0.15
+      ],
+      "median_after_warmup": 0.14500000000000002,
+      "hotspot_trials": [
+        {
+          "schedule": "static,128",
+          "tree_time": 0.0203,
+          "force_time": 0.0347
+        },
+        {
+          "schedule": "static,128",
+          "tree_time": 0.0218,
+          "force_time": 0.0332
+        },
+        {
+          "schedule": "static,128",
+          "tree_time": 0.0207,
+          "force_time": 0.0346
+        },
+        {
+          "schedule": "static,128",
+          "tree_time": 0.0196,
+          "force_time": 0.0346
+        },
+        {
+          "schedule": "static,128",
+          "tree_time": 0.0203,
+          "force_time": 0.0368
+        }
+      ],
+      "tree_median_after_warmup": 0.020499999999999997,
+      "force_median_after_warmup": 0.0346,
+      "schedule": "static,128"
+    },
+    {
+      "label": "schedule_dynamic_128",
+      "trials": [
+        0.13,
+        0.13,
+        0.13,
+        0.13,
+        0.14
+      ],
+      "median_after_warmup": 0.13,
+      "hotspot_trials": [
+        {
+          "schedule": "dynamic,128",
+          "tree_time": 0.021,
+          "force_time": 0.0281
+        },
+        {
+          "schedule": "dynamic,128",
+          "tree_time": 0.0198,
+          "force_time": 0.0298
+        },
+        {
+          "schedule": "dynamic,128",
+          "tree_time": 0.02,
+          "force_time": 0.0281
+        },
+        {
+          "schedule": "dynamic,128",
+          "tree_time": 0.0201,
+          "force_time": 0.0292
+        },
+        {
+          "schedule": "dynamic,128",
+          "tree_time": 0.0212,
+          "force_time": 0.0296
+        }
+      ],
+      "tree_median_after_warmup": 0.02005,
+      "force_median_after_warmup": 0.029400000000000003,
+      "schedule": "dynamic,128"
+    },
+    {
+      "label": "schedule_guided_128",
+      "trials": [
+        0.13,
+        0.13,
+        0.13,
+        0.13,
+        0.13
+      ],
+      "median_after_warmup": 0.13,
+      "hotspot_trials": [
+        {
+          "schedule": "guided,128",
+          "tree_time": 0.0199,
+          "force_time": 0.0303
+        },
+        {
+          "schedule": "guided,128",
+          "tree_time": 0.022,
+          "force_time": 0.0268
+        },
+        {
+          "schedule": "guided,128",
+          "tree_time": 0.0211,
+          "force_time": 0.0309
+        },
+        {
+          "schedule": "guided,128",
+          "tree_time": 0.0203,
+          "force_time": 0.0295
+        },
+        {
+          "schedule": "guided,128",
+          "tree_time": 0.0198,
+          "force_time": 0.0307
+        }
+      ],
+      "tree_median_after_warmup": 0.0207,
+      "force_median_after_warmup": 0.030100000000000002,
+      "schedule": "guided,128"
+    }
+  ]
+}
