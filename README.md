@@ -1,55 +1,74 @@
-# High‑Performance N‑Body Simulation
+# High‑Performance N‑Body Simulation Engine
 
-Gravitational N‑body simulation suffers from O(N²) complexity in naïve pairwise force computation. 
-This project implements the **Barnes–Hut treecode** to reduce that cost, combined with parallelization and memory optimizations.
+An optimized gravitational N‑body simulation engine written in C, leveraging the **Barnes–Hut** algorithm to reduce complexity from $O(N^2)$ to $O(N \log N)$. This project focuses on High-Performance Computing (HPC) techniques including custom memory allocators, spatial sorting, and multicore parallelism.
 
-## Key Aspects
-- Implementation in C with **OpenMP** for parallel force computation  
-- Two integrators: **symplectic Euler** and **Velocity Verlet**  
-- Using **K‑means clustering** to improve spatial locality and load balancing  
-- Optimizations including precomputing reciprocals, minimizing branching  
-- Performance and accuracy benchmarks via accompanying python scripts
+## Project Structure
 
-**Code** | **Report**  
-[Code](https://github.com/sylvia-ymlin/HPP_Project/tree/main/project) | [Report (PDF)](https://github.com/sylvia-ymlin/HPP_Project/blob/main/project/report.pdf)
+```
+├── src/                # Source Code
+│   ├── galsim.c        # Main simulation loop & Arg parsing
+│   ├── barnes_hut.c    # QuadTree construction & Force calculation (Core)
+│   ├── kmeans.c        # K-means clustering for load balancing
+│   ├── morton.c        # Z-Order (Morton Code) sorting for cache locality
+│   ├── ds.h            # Data structures & Arena definition
+│   └── legacy/         # Archived original implementations (v1)
+├── docs/               # Documentation
+│   ├── interview_prep.md    # Technical deep-dive & optimization story
+│   └── PROJECT_ANALYSIS.md  # Theoretical analysis
+├── scripts/            # Helper Scripts
+│   ├── generate_data.py     # Generate binary input files
+│   ├── bench_alloc.c        # Micro-benchmark for Memory Arena
+│   └── bench_traversal.c    # Micro-benchmark for Tree Traversal
+├── data/               # Input/Output data
+├── CMakeLists.txt      # Build configuration
+└── README.md           # This file
+```
 
----
+## Key Optimizations
 
-## Build & Run
+1.  **Algorithmic**: Barnes-Hut Tree Code ($O(N \log N)$).
+2.  **Memory Management**: Custom **Linear Arena Allocator** replaces `malloc/free` for tree nodes, achieving >400x speedup in allocation.
+3.  **Data Locality**: 
+    *   **Z-Order Sorting (Morton Code)**: Reorders particles in memory to match geometric proximity (Cache Friendly).
+    *   **K-Means Clustering**: Partitions particles for balanced OpenMP scheduling.
+4.  **Parallelism**: OpenMP Dynamic Scheduling for force calculation and K-means.
+5.  **Compute Kernel**: **Stackless Tree Traversal** implementation reduces function call overhead.
+6.  **Safety**: Removed all Variable Length Arrays (VLAs) to support simulation of millions of particles without Stack Overflow.
+
+## Build
+
+Use CMake to build the project (requires OpenMP):
 
 ```bash
-cd project
+mkdir -p build
+cd build
+cmake ..
 make
 ```
 
-### Run simulation
+## Usage
 
+### Run Simulation
 ```bash
-./simulate -n 1000 -t 500 -dt 0.001 -theta 0.5 -method verlet
+# Syntax
+./simulate <N> <filename> <nsteps> <delta_t> <n_threads> <theta_max> <k_clusters>
+
+# Example: 100k particles, 100 steps, using 4 threads and 10 clusters
+./simulate 100000 ../data/input.gal 100 0.001 4 0.5 10
 ```
 
-**Parameters:**  
-- `-n` — number of particles  
-- `-t` — number of time steps  
-- `-dt` — time increment  
-- `-theta` — Barnes–Hut opening angle  
-- `-method` — `euler` or `verlet`  
-
-### Performance analysis & plotting
+### Run Benchmarks
+You can compile and run specific micro-benchmarks located in `scripts/`:
 
 ```bash
-cd python
-python code_performance.py
-python code_complexity.py
+# Benchmark Memory Arena vs System Malloc
+gcc -O3 scripts/bench_alloc.c -o build/bench_alloc
+./build/bench_alloc
+
+# Benchmark Recursive vs Stackless Traversal (requires linking core objs)
+# (See scripts/bench_traversal.c for details)
 ```
 
-### Validation tests
-
-```bash
-cd test
-./run_tests.sh
-```
-
-This compares outputs against reference data in `ref_output_data`.
-
----
+## Input File Format
+Binary file containing $N$ particles sequentially. Each particle consists of 6 `double` values:
+`[pos_x, pos_y, mass, vx, vy, brightness]`

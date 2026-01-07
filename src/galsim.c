@@ -1,5 +1,6 @@
 #include "barnes_hut.h"
 #include "kmeans.h"
+#include "morton.h"
 
 #define EPSILON_O 1e-3
 #define CHUNK_SIZE 8
@@ -92,9 +93,8 @@ int main(int argc, char *argv[]) {
 
   /* Initialize the clusters
    * -------------------------------------------------------------------------------------*/
-  // Allocate 2D array on heap: pointer to array of N ints
-  // clusters is of type int (*)[N]
-  int(*clusters)[N] = malloc(k * sizeof(*clusters));
+  // Allocate flat array on heap: size k * N
+  int *clusters = (int *)malloc(k * N * sizeof(int));
   int *clusters_size = (int *)malloc(k * sizeof(int));
 
   if (!clusters || !clusters_size) {
@@ -102,22 +102,35 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  double region[4] = {-100000, 100000, -100000,
+                      100000}; // left, right, down, up
+
+  /* Spatial Sorting (Z-Order) for Cache Locality
+     This sorts the particle arrays in-place based on Morton codes to improve
+     memory access patterns during tree traversal. */
+  z_order_sort(pos_x, pos_y, mass, vx, vy, brightness, N, region[0], region[1],
+               region[2], region[3]);
+
   if (k == 1) { /* No clustering */
     clusters_size[0] = N;
     for (int i = 0; i < N; i++) {
-      clusters[0][i] = i;
+      // Flat array access: row 0, col i -> 0*N + i = i
+      clusters[i] = i;
     }
   } else {
     kmeans(pos_x, pos_y, N, clusters, clusters_size, k, n_threads);
   }
-  double region[4] = {-100000, 100000, -100000,
-                      100000}; // left, right, down, up
+  /* Initialize Memory Arena for Barnes-Hut Tree */
+  NodeArena arena;
+  // Capacity guess: 2*N is usually enough for Barnes-Hut.
+  // If not, the arena allocator will exit(1).
+  init_arena(&arena, 3 * N);
 
 /* Velocity Verlet: initial acceleration
  * -------------------------------------------------------------------------------------*/
 #if TWO_ORDER
   barnes_hut(pos_x, pos_y, mass, N, clusters, region, clusters_size, k, fx, fy,
-             n_threads, THETA_MAX);
+             n_threads, THETA_MAX, &arena);
   for (int i = 0; i < N; i++) {
     acc_x[i] = fx[i] * mass_inver[i];
     acc_y[i] = fy[i] * mass_inver[i];
@@ -139,6 +152,7 @@ int main(int argc, char *argv[]) {
           pos_y[i] < region[2] || pos_y[i] > region[3]) {
         printf("At least one particle is out of the region, and the simulation "
                "has been terminated.\n");
+        free_arena(&arena);
         exit(0);
       }
     }
@@ -150,7 +164,7 @@ int main(int argc, char *argv[]) {
 
     /* forces calculation */
     barnes_hut(pos_x, pos_y, mass, N, clusters, region, clusters_size, k, fx,
-               fy, n_threads, THETA_MAX);
+               fy, n_threads, THETA_MAX, &arena);
 
 /* update the velocity and acceleration */
 #ifdef _OPENMP
@@ -173,6 +187,7 @@ int main(int argc, char *argv[]) {
           pos_y[i] < region[2] || pos_y[i] > region[3]) {
         printf("At least one particle is out of the region, and the simulation "
                "has been terminated.\n");
+        free_arena(&arena);
         exit(0);
       }
 #endif
@@ -184,6 +199,7 @@ int main(int argc, char *argv[]) {
   FILE *rfile = fopen("result.gal", "w");
   if (rfile == NULL) {
     printf("Error opening file!\n");
+    free_arena(&arena);
     return 1;
   }
   for (int i = 0; i < N; i++) {
@@ -204,7 +220,9 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Clean up memory
+  free_arena(&arena);
   free(pos_x);
+
   free(pos_y);
   free(mass);
   free(vx);

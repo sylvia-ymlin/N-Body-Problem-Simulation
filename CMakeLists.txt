@@ -29,6 +29,7 @@ add_executable(simulate
     src/galsim.c
     src/barnes_hut.c
     src/kmeans.c
+    src/morton.c
 )
 
 # Link OpenMP and Math library
