@@ -26,13 +26,13 @@ endif()
 
 # Define the executable
 add_executable(simulate
-    project/galsim.c
-    project/barnes_hut.c
-    project/kmeans.c
+    src/galsim.c
+    src/barnes_hut.c
+    src/kmeans.c
 )
 
 # Link OpenMP and Math library
 target_link_libraries(simulate PUBLIC OpenMP::OpenMP_C m)
 
 # Include directories
-target_include_directories(simulate PUBLIC project)
+target_include_directories(simulate PUBLIC src)
