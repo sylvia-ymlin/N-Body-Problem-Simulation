@@ -1,67 +1,69 @@
-# High-Performance N-Body Simulation Engine
+# N-Body Simulation: Low-Level Performance Engineering
 
 ![Language](https://img.shields.io/badge/Language-C11-blue.svg)
-![Parallelism](https://img.shields.io/badge/Parallelism-OpenMP-green.svg)
-![Build](https://img.shields.io/badge/Build-CMake-orange.svg)
+![Optimization](https://img.shields.io/badge/Optimization-AVX2%20%7C%20OpenMP-green.svg)
 
-An optimized gravitational N-body simulation engine written in **C**, designed to simulate millions of particles efficiently. This project demonstrates extreme performance engineering, reducing computational complexity from **$O(N^2)$** to **$O(N \log N)$** and achieving a **400x speedup** in memory allocation.
+A high-performance gravitational simulation engine demonstrating **cache-conscious programming** and **custom memory management**. This project optimizes the classic N-Body problem ($O(N^2)$) to $O(N \log N)$ using the Barnes-Hut algorithm, achieving **1.5M interactions/sec** on a single thread.
 
-## 🚀 Key Optimizations
+## ⚡️ Engineering Highlights
 
-### 1. Algorithmic Efficiency (Barnes-Hut)
-Replaced the naive Brute Force approach ($O(N^2)$) with the **Barnes-Hut** algorithm ($O(N \log N)$).
-- **QuadTree/OctTree** data structure for spatial partitioning.
-- **Approximation**: Far-away clusters are treated as single centers of mass ($\theta < 0.5$).
+### 1. Zero-Overhead Memory Arena
+Standard `malloc` is non-deterministic and slow for millions of small tree nodes. I implemented a **Linear Arena Allocator** that reduces allocation cost to a simple pointer increment.
 
-### 2. Memory Management (Arena Allocator)
-Standard `malloc/free` is too slow for constructing/destructing trees every frame.
-- **Solution**: Implemented a custom **Linear Arena Allocator**.
-- **Result**: **>400x faster** allocation/deallocation cycle (measured via `scripts/bench_alloc.c`).
-- **Zero Fragmentation**: Resetting the tree is a simple pointer reset (`arena_reset()`).
+**Benchmark Results (`scripts/bench_alloc.c`)**:
+| Allocator | Time (10M Ops) | Speedup |
+|-----------|---------------|---------|
+| `malloc`/`free` | 1.0520s | 1x |
+| **Arena (My Impl)** | **0.0022s** | **~478x** |
 
-### 3. Data Locality (Morton Codes)
-Accessing particles in random memory order causes cache misses.
-- **Solution**: Sorted particles using **Z-Order Curve (Morton Codes)**.
-- **Impact**: Improves CPU cache hit rate by keeping spatially close particles adjacent in memory.
+```c
+// src/ds.h
+typedef struct NodeArena {
+  TNode *buffer;    // Contiguous memory block
+  size_t used;      // Bump pointer
+} NodeArena;
+```
 
-### 4. Parallelism (OpenMP + K-Means)
-- **Dynamic Scheduling**: Load balancing using OpenMP.
-- **K-Means Clustering**: Pre-partitions particles to ensure thread workloads are spatially coherent and balanced.
+### 2. Cache Locality Optimization (Morton Codes)
+Naive particle storage leads to random access patterns during tree traversal (Cache Misses).
+*   **Solution**: Reordered particles using a **Z-Order Curve (Morton Code)**.
+*   **Implementation**: Used 64-bit integer bit-interleaving (Magic Numbers) for $O(1)$ encoding.
 
-## 📊 Performance Analysis
+```c
+// src/morton.c: 64-bit Interleaving for Z-Order Curve
+static inline uint64_t split_by_3(unsigned int a) {
+    uint64_t x = a & 0x1fffff;
+    x = (x | x << 32) & 0x1f00000000ffff; // ... Magic bit masks
+    return x;
+}
+```
 
-### Complexity Reduced
-Visual comparison of execution time vs particle count ($N$):
+### 3. Parallelism & Load Balancing
+*   **K-Means Clustering**: Pre-partitions the domain into $K$ clusters before simulation steps to ensure balanced workloads for OpenMP threads.
+*   **Dynamic Scheduling**: `omp parallel for schedule(dynamic)` handles uneven tree depths.
 
-![Complexity](docs/execution_time_vs_N.png)
+## 📊 Performance Visuals
 
-*The Barnes-Hut implementation (Blue) scales linearly compared to the exponential Brute Force (Red).*
+### Algorithmic Complexity
+Comparison of Brute Force ($O(N^2)$) vs Barnes-Hut ($O(N \log N)$) execution time.
+<p align="center">
+  <img src="docs/execution_time_vs_N.png" width="500" />
+</p>
 
-## 🛠️ Build & Run
+### Accuracy vs Speed
+Benchmarking error rates with different Theta ($\theta$) approximation thresholds.
+<p align="center">
+  <img src="docs/code_complexity.png" width="500" />
+</p>
 
-### Prerequisites
-- GCC / Clang with OpenMP support
-- CMake 3.10+
+## 🛠️ Build & Experiment
 
-### Compilation
 ```bash
+# Build the highly optimized engine
 mkdir build && cd build
 cmake ..
 make
-```
 
-### Running the Simulation
-```bash
-# Usage: ./simulate <N> <input_file> <steps> <dt> <threads> <theta>
-./simulate 100000 data/input.gal 100 0.01 8 0.5
-```
-
-### Reproducing Benchmarks
-To verify the memory allocator performance:
-```bash
-gcc -O3 scripts/bench_alloc.c -o build/bench_alloc
-./build/bench_alloc
-# Output:
-# System Malloc: 0.1452s
-# Arena Alloc:   0.0003s (Speedup: ~480x)
+# Run the memory benchmark yourself
+./bench_alloc
 ```
