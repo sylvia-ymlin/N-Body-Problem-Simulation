@@ -44,12 +44,8 @@ int insert(NodeArena *arena, TNode *tNode, double pos_x, double pos_y,
  * - calculate the distance between the particle and the node.
  * - calculate the force factor and update the force.
  * -------------------------------------------------- */
-void compute_force_recursive(double pos_x, double pos_y, double mass, int PID,
-                             TNode *tNode, double *fx, double *fy, int N,
-                             double THETA_MAX);
-
 void compute_force_stackless(double pos_x, double pos_y, double mass, int PID,
-                             TNode *tNode, double *fx, double *fy, int N,
+                             TNode *root, double *fx, double *fy, double G,
                              double THETA_MAX);
 
 /* Arena Management Functions */

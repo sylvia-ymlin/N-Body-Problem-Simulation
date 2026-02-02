@@ -7,7 +7,7 @@
 #define N_ITERATIONS 100
 
 typedef struct TNode {
-  double data[8];
+  double data[4];
   struct TNode *child[4];
 } TNode;
 

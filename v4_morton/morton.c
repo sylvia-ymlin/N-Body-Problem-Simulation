@@ -2,19 +2,19 @@
 
 // Magic numbers for spreading 32-bit integer into 64-bit integer
 // leaving zeros in even positions.
-// 0000...0000 dcba -> 00d00c00b00a
-static inline uint64_t split_by_3(unsigned int a) {
-  uint64_t x = a & 0x1fffff; // we only look at the first 21 bits
-  x = (x | x << 32) & 0x1f00000000ffff;
-  x = (x | x << 16) & 0x1f0000ff0000ff;
-  x = (x | x << 8) & 0x100f00f00f00f00f;
-  x = (x | x << 4) & 0x10c30c30c30c30c3;
-  x = (x | x << 2) & 0x1249249249249249;
+// 0000...0000 dcba -> 0d0c0b0a
+static inline uint64_t split_by_2(unsigned int a) {
+  uint64_t x = a & 0xffffffff;
+  x = (x | x << 16) & 0x0000ffff0000ffff;
+  x = (x | x << 8) & 0x00ff00ff00ff00ff;
+  x = (x | x << 4) & 0x0f0f0f0f0f0f0f0f;
+  x = (x | x << 2) & 0x3333333333333333;
+  x = (x | x << 1) & 0x5555555555555555;
   return x;
 }
 
 static inline uint64_t morton_encode_magicbits(unsigned int x, unsigned int y) {
-  return (split_by_3(x) | (split_by_3(y) << 1));
+  return (split_by_2(x) | (split_by_2(y) << 1));
 }
 
 typedef struct SortEntry {
@@ -43,9 +43,9 @@ void z_order_sort(double *pos_x, double *pos_y, double *mass, double *vx,
   // Normalization factors
   double width = RB - LB;
   double height = UB - DB;
-  // Map to 21-bit integer (max for split_by_3) -> 2M range
-  double scale_x = (double)((1 << 21) - 1) / width;
-  double scale_y = (double)((1 << 21) - 1) / height;
+  // Map to 32-bit integer (max for split_by_2)
+  double scale_x = (double)((1ULL << 32) - 1) / width;
+  double scale_y = (double)((1ULL << 32) - 1) / height;
 
   // 1. Compute codes
   for (int i = 0; i < N; i++) {
@@ -59,8 +59,6 @@ void z_order_sort(double *pos_x, double *pos_y, double *mass, double *vx,
   qsort(entries, N, sizeof(SortEntry), compare_entries);
 
   // 3. Permute arrays
-  // We need temp buffers. To save memory, we can do one array at a time?
-  // No, we need to permute all of them. Let's allocate one generic temp buffer.
   double *temp = (double *)malloc(N * sizeof(double));
   if (!temp) {
     free(entries);

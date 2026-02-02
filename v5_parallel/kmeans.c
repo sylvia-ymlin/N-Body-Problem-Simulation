@@ -10,9 +10,7 @@
 bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
             int *clusters_size, int k, int n_threads) {
 
-  CNode clusters[k]; // small VLA (k is small), acceptable. Or malloc if k is
-                     // large.
-  // int labels[N]; // BAD VLA
+  CNode clusters[k];
   int *labels = (int *)malloc(N * sizeof(int));
   if (!labels) {
     fprintf(stderr, "Memory allocation failed for kmeans labels.\n");
@@ -30,16 +28,16 @@ bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
   }
 
   /* Iterate until the clusters centroids converge */
-  int interations = 0;
+  int iterations = 0;
   while (!converged(clusters, old_clusters_ctr_x, old_clusters_ctr_y,
-                    interations, k)) {
+                    iterations, k)) {
     /* Save the old clusters centroids. */
     for (int i = 0; i < k; i++) {
       old_clusters_ctr_x[i] = clusters[i].ctr_x;
       old_clusters_ctr_y[i] = clusters[i].ctr_y;
     }
 
-    interations++;
+    iterations++;
 
     /* Assign the particles to the clusters. */
     assignLabels(pos_x, pos_y, clusters, labels, k, N, n_threads);
@@ -53,10 +51,8 @@ bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
     clusters_size[i] = 0;
   }
   for (int i = 0; i < N; i++) {
-    // Flat array indexing: row i -> i * N
-    // clustersP[labels[i]][clusters_size[labels[i]]++] = i;
     int row = labels[i];
-    int col = clusters_size[row]; // current count for this cluster
+    int col = clusters_size[row];
     clustersP[row * N + col] = i;
     clusters_size[row]++;
   }
@@ -67,9 +63,6 @@ bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
 
 /* Function: converged
  * --------------------------------------------------
- * This function checks if the clusters centroids have converged.
- * K Means terminates when the clusters centroids do not change or achieve a
- * maximum number of iterations.
  */
 bool converged(CNode *clusters, double *old_clusters_ctr_x,
                double *old_clusters_ctr_y, int iterations, int k) {
@@ -89,12 +82,9 @@ bool converged(CNode *clusters, double *old_clusters_ctr_x,
 
 /* Function: get the centroids
  * --------------------------------------------------
- * This function initializes the clusters centroids when the corresponding
- * clusters are empty. Or calculates the centroids as the geometric center of
- * the particles in the cluster.
  */
-void getCentroids(double *pos_x, double *pos_y, CNode *clusters, int *labels,
-                  int k, int N) {
+void getCentroids(double *pos_x, double *pos_y, CNode *clusters,
+                  int *labels, int k, int N) {
   /* reset the clusters. */
   for (int i = 0; i < k; i++) {
     clusters[i].ctr_x = 0;
@@ -102,49 +92,44 @@ void getCentroids(double *pos_x, double *pos_y, CNode *clusters, int *labels,
     clusters[i].count = 0;
   }
 
-  /* sum the positions of the particles in the same cluster and count the number
-   * of particles in the cluster. */
+  /* update the clusters. */
   for (int i = 0; i < N; i++) {
     clusters[labels[i]].ctr_x += pos_x[i];
     clusters[labels[i]].ctr_y += pos_y[i];
     clusters[labels[i]].count++;
   }
 
-  /* calculate the new centroids or initialize the centroids if the cluster is
-   * empty. */
+  /* calculate the centroids. */
   for (int i = 0; i < k; i++) {
-    clusters[i].ctr_x = clusters[i].count == 0
-                            ? pos_x[i]
-                            : clusters[i].ctr_x / clusters[i].count;
-    clusters[i].ctr_y = clusters[i].count == 0
-                            ? pos_y[i]
-                            : clusters[i].ctr_y / clusters[i].count;
+    if (clusters[i].count == 0) {
+      clusters[i].ctr_x = pos_x[i];
+      clusters[i].ctr_y = pos_y[i];
+    } else {
+      clusters[i].ctr_x /= clusters[i].count;
+      clusters[i].ctr_y /= clusters[i].count;
+    }
   }
 }
 
 /* Function: assign labels for the particles
  * --------------------------------------------------
- * This function assigns the particles to the clusters based on the distance to
- * the cluster centroids.
  */
-void assignLabels(double *pos_x, double *pos_y, CNode *clusters, int *labels,
-                  int k, int N, int n_threads) {
-/* Paralize the computation of loss function. */
-#ifdef _OPENMP
-#pragma omp parallel for schedule(static) num_threads(n_threads)
-#endif
+void assignLabels(double *pos_x, double *pos_y, CNode *clusters,
+                  int *labels, int k, int N, int n_threads) {
+#pragma omp parallel for num_threads(n_threads)
   for (int i = 0; i < N; i++) {
-    double loss = INFINITY, cur_loss;
+    double min_dist = INFINITY;
+    int label = 0;
     for (int j = 0; j < k; j++) {
-      // Optimized: removed pow()
-      double dx = pos_x[i] - clusters[j].ctr_x;
-      double dy = pos_y[i] - clusters[j].ctr_y;
-      cur_loss = dx * dx + dy * dy;
-
-      if (cur_loss < loss) {
-        loss = cur_loss;
-        labels[i] = j;
+      double dist = (pos_x[i] - clusters[j].ctr_x) *
+                        (pos_x[i] - clusters[j].ctr_x) +
+                    (pos_y[i] - clusters[j].ctr_y) *
+                        (pos_y[i] - clusters[j].ctr_y);
+      if (dist < min_dist) {
+        min_dist = dist;
+        label = j;
       }
     }
+    labels[i] = label;
   }
 }
