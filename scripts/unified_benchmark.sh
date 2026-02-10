@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Unified Benchmark Suite
+# Usage: ./scripts/unified_benchmark.sh <N> <steps>
+
+N=${1:-5000}
+STEPS=${2:-10}
+DT=0.001
+THREADS=8
+THETA=0.5
+K=8
+INPUT="data/inputs/input_500.bin" # fallback or use generated
+
+echo "--- N-Body Performance Journey: v1 to v5 ---"
+echo "Configuration: N=$N, Steps=$STEPS, Threads=$THREADS"
+echo "--------------------------------------------"
+
+VERSIONS=("v1_naive" "v2_barnes_hut" "v3_arena" "v4_morton" "v5_parallel")
+
+for VER in "${VERSIONS[@]}"; do
+    EXE="./build/$VER/$VER"
+    if [ -f "$EXE" ]; then
+        echo "Testing $VER..."
+        $EXE $N $INPUT $STEPS $DT $THREADS $THETA $K
+        echo ""
+    else
+        echo "Skip $VER (Binary not found: $EXE)"
+    fi
+done
+
+echo "Benchmark Complete."
