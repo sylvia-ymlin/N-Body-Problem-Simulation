@@ -18,7 +18,7 @@
  * @param LB, RB, DB, UB: Bounding box of the simulation region
  */
 void z_order_sort(double *pos_x, double *pos_y, double *mass, double *vx,
-                  double *vy, double *brightness, int N, double LB, double RB,
-                  double DB, double UB);
+                  double *vy, int N, double LB, double RB, double DB,
+                  double UB);
 
 #endif

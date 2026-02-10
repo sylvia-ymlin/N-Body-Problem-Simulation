@@ -5,7 +5,6 @@
 #include "kmeans.h"
 
 #define EPSILON_O 1e-3
-#define CHUNK_SIZE 8
 
 /** Barnes-Hut algorithm
  * Based on the clustered particles, uterlize the space limitation to improve
@@ -44,9 +43,9 @@ int insert(NodeArena *arena, TNode *tNode, double pos_x, double pos_y,
  * - calculate the distance between the particle and the node.
  * - calculate the force factor and update the force.
  * -------------------------------------------------- */
-void compute_force_stackless(double pos_x, double pos_y, double mass, int PID,
-                             TNode *root, double *fx, double *fy, double G,
-                             double THETA_MAX);
+void compute_force(double pos_x, double pos_y, double mass, int PID,
+                   TNode *root, double *fx, double *fy, double G,
+                   double THETA_MAX);
 
 /* Arena Management Functions */
 void init_arena(NodeArena *arena, size_t capacity);

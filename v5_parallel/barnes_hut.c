@@ -1,9 +1,8 @@
 #include "barnes_hut.h"
+#define CHUNK_SIZE 8
 
-/** Barnes-Hut algorithm
- * Based on the clustered particles, utilize the spatial and temporal locality
- * to improve the cache performance.
- * -------------------------------------------------- */
+// Barnes-Hut: hierarchical force calculation $(O(N \log N))$
+// Uses an octree (quadtree in 2D) to approximate far-field forces.
 void barnes_hut(double *pos_x, double *pos_y, double *mass, int N, int *cluster,
                 double *region, int *clusters_size, int k, double *fx,
                 double *fy, int n_threads, double THETA_MAX, NodeArena *arena) {
@@ -15,6 +14,32 @@ void barnes_hut(double *pos_x, double *pos_y, double *mass, int N, int *cluster,
 
   /* Reset the memory arena for the new tree build */
   reset_arena(arena);
+
+  /* Update region bounds dynamically */
+  region[0] = pos_x[0];
+  region[1] = pos_x[0];
+  region[2] = pos_y[0];
+  region[3] = pos_y[0];
+  for (int i = 1; i < N; i++) {
+    if (pos_x[i] < region[0])
+      region[0] = pos_x[i];
+    if (pos_x[i] > region[1])
+      region[1] = pos_x[i];
+    if (pos_y[i] < region[2])
+      region[2] = pos_y[i];
+    if (pos_y[i] > region[3])
+      region[3] = pos_y[i];
+  }
+  double r_dx = region[1] - region[0];
+  double r_dy = region[3] - region[2];
+  if (r_dx < 1e-6)
+    r_dx = 1e-6;
+  if (r_dy < 1e-6)
+    r_dy = 1e-6;
+  region[0] -= r_dx * 0.05;
+  region[1] += r_dx * 0.05;
+  region[2] -= r_dy * 0.05;
+  region[3] += r_dy * 0.05;
 
   /* Build the global tree */
   /* Initialize the root with 2D region */
@@ -32,19 +57,24 @@ void barnes_hut(double *pos_x, double *pos_y, double *mass, int N, int *cluster,
 
   double G = 100.0 / N;
   /* Compute the forces */
+  // Reconstruct offsets for packed clusters array
+  int *offsets = (int *)malloc(k * sizeof(int));
+  offsets[0] = 0;
+  for (int i = 1; i < k; i++)
+    offsets[i] = offsets[i - 1] + clusters_size[i - 1];
+
   for (int i = 0; i < k; i++) {
 #pragma omp parallel for schedule(dynamic, CHUNK_SIZE) num_threads(n_threads)
     for (int j = 0; j < clusters_size[i]; j++) {
-      int PID = cluster[i * N + j];
-      compute_force_stackless(pos_x[PID], pos_y[PID], mass[PID], PID, tTree,
-                              &fx[PID], &fy[PID], G, THETA_MAX);
+      int PID = cluster[offsets[i] + j];
+      compute_force(pos_x[PID], pos_y[PID], mass[PID], PID, tTree, &fx[PID],
+                    &fy[PID], G, THETA_MAX);
     }
   }
+  free(offsets);
 }
 
-/** Create a new tree node
- * According the position of the subsquare, determine the region of it.
- * -------------------------------------------------- */
+// Create a new tree node representing a sub-quadrant
 TNode *create_new_TNode(NodeArena *arena, int index, double LB, double RB,
                         double DB, double UB) {
   if (arena->used >= arena->capacity) {
@@ -68,8 +98,10 @@ TNode *create_new_TNode(NodeArena *arena, int index, double LB, double RB,
   new_TNode->UB = (index == 1 || index == 3) ? UB : mid_y;
 
   if (index == -1) { // Root special case
-    new_TNode->LB = LB; new_TNode->RB = RB;
-    new_TNode->DB = DB; new_TNode->UB = UB;
+    new_TNode->LB = LB;
+    new_TNode->RB = RB;
+    new_TNode->DB = DB;
+    new_TNode->UB = UB;
   }
   return new_TNode;
 }
@@ -83,17 +115,17 @@ int insert(NodeArena *arena, TNode *tNode, double pos_x, double pos_y,
 
   if (tNode->PID != -1) {
     if (width < 1e-12 || ((pos_x == tNode->pos_x) && (pos_y == tNode->pos_y))) {
-        // Too small or identical position, just update mass and return
-        double new_mass = tNode->mass + mass;
-        tNode->pos_x = (mass * pos_x + tNode->mass * tNode->pos_x) / new_mass;
-        tNode->pos_y = (mass * pos_y + tNode->mass * tNode->pos_y) / new_mass;
-        tNode->mass = new_mass;
-        return 0;
+      // Too small or identical position, just update mass and return
+      double new_mass = tNode->mass + mass;
+      tNode->pos_x = (mass * pos_x + tNode->mass * tNode->pos_x) / new_mass;
+      tNode->pos_y = (mass * pos_y + tNode->mass * tNode->pos_y) / new_mass;
+      tNode->mass = new_mass;
+      return 0;
     }
     // Move existing particle to a child
     int old_index = (tNode->pos_y > mid_y) + 2 * (tNode->pos_x > mid_x);
-    tNode->child[old_index] = create_new_TNode(
-        arena, old_index, tNode->LB, tNode->RB, tNode->DB, tNode->UB);
+    tNode->child[old_index] = create_new_TNode(arena, old_index, tNode->LB,
+                                               tNode->RB, tNode->DB, tNode->UB);
     tNode->child[old_index]->PID = tNode->PID;
     tNode->child[old_index]->pos_x = tNode->pos_x;
     tNode->child[old_index]->pos_y = tNode->pos_y;
@@ -109,8 +141,8 @@ int insert(NodeArena *arena, TNode *tNode, double pos_x, double pos_y,
 
   int index = (pos_y > mid_y) + 2 * (pos_x > mid_x);
   if (tNode->child[index] == NULL) {
-    tNode->child[index] =
-        create_new_TNode(arena, index, tNode->LB, tNode->RB, tNode->DB, tNode->UB);
+    tNode->child[index] = create_new_TNode(arena, index, tNode->LB, tNode->RB,
+                                           tNode->DB, tNode->UB);
     tNode->child[index]->pos_x = pos_x;
     tNode->child[index]->pos_y = pos_y;
     tNode->child[index]->mass = mass;
@@ -134,11 +166,10 @@ static inline void _compute_force(double pos_x, double pos_y, double mass,
   *fy += force_factor * r_y;
 }
 
-
-/** Compute the force between the particle and the node (Stackless) */
-void compute_force_stackless(double pos_x, double pos_y, double mass, int PID,
-                             TNode *root, double *fx, double *fy, double G,
-                             double THETA_MAX) {
+// Compute gravitational force using the BH tree
+void compute_force(double pos_x, double pos_y, double mass, int PID,
+                   TNode *root, double *fx, double *fy, double G,
+                   double THETA_MAX) {
   TNode *stack[256];
   int sp = 0;
 
@@ -164,8 +195,14 @@ void compute_force_stackless(double pos_x, double pos_y, double mass, int PID,
         _compute_force(pos_x, pos_y, mass, tNode, fx, fy, G);
       } else {
         for (int i = 3; i >= 0; i--) {
-          if (tNode->child[i])
-            stack[sp++] = tNode->child[i];
+          if (tNode->child[i]) {
+            if (sp < 256) {
+              stack[sp++] = tNode->child[i];
+            } else {
+              fprintf(stderr, "Error: BH Stack Overflow (sp=256)\n");
+              exit(1);
+            }
+          }
         }
       }
     }
@@ -193,6 +230,4 @@ void free_arena(NodeArena *arena) {
   arena->used = 0;
 }
 
-void reset_arena(NodeArena *arena) {
-  arena->used = 0;
-}
+void reset_arena(NodeArena *arena) { arena->used = 0; }

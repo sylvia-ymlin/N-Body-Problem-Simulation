@@ -3,18 +3,15 @@
 // Magic numbers for spreading 32-bit integer into 64-bit integer
 // leaving zeros in even positions.
 // 0000...0000 dcba -> 0d0c0b0a
-static inline uint64_t split_by_2(unsigned int a) {
-  uint64_t x = a & 0xffffffff;
-  x = (x | x << 16) & 0x0000ffff0000ffff;
-  x = (x | x << 8) & 0x00ff00ff00ff00ff;
-  x = (x | x << 4) & 0x0f0f0f0f0f0f0f0f;
-  x = (x | x << 2) & 0x3333333333333333;
-  x = (x | x << 1) & 0x5555555555555555;
-  return x;
-}
-
-static inline uint64_t morton_encode_magicbits(unsigned int x, unsigned int y) {
-  return (split_by_2(x) | (split_by_2(y) << 1));
+// Simple bit interleaving for clarity
+static inline uint64_t morton_encode(unsigned int x, unsigned int y) {
+  uint64_t answer = 0;
+  for (uint64_t i = 0; i < 32; i++) {
+    uint64_t x_bit = (x >> i) & 1;
+    uint64_t y_bit = (y >> i) & 1;
+    answer |= (x_bit << (2 * i)) | (y_bit << (2 * i + 1));
+  }
+  return answer;
 }
 
 typedef struct SortEntry {
@@ -33,8 +30,8 @@ int compare_entries(const void *a, const void *b) {
 }
 
 void z_order_sort(double *pos_x, double *pos_y, double *mass, double *vx,
-                  double *vy, double *brightness, int N, double LB, double RB,
-                  double DB, double UB) {
+                  double *vy, int N, double LB, double RB, double DB,
+                  double UB) {
 
   SortEntry *entries = (SortEntry *)malloc(N * sizeof(SortEntry));
   if (!entries)
@@ -52,7 +49,8 @@ void z_order_sort(double *pos_x, double *pos_y, double *mass, double *vx,
     unsigned int ix = (unsigned int)((pos_x[i] - LB) * scale_x);
     unsigned int iy = (unsigned int)((pos_y[i] - DB) * scale_y);
     entries[i].index = i;
-    entries[i].code = morton_encode_magicbits(ix, iy);
+    // Use loop-based morton encode
+    entries[i].code = morton_encode(ix, iy);
   }
 
   // 2. Sort indices based on code
@@ -76,7 +74,7 @@ void z_order_sort(double *pos_x, double *pos_y, double *mass, double *vx,
   PERMUTE(mass);
   PERMUTE(vx);
   PERMUTE(vy);
-  PERMUTE(brightness);
+  // PERMUTE(brightness); // Removed
 
 #undef PERMUTE
 

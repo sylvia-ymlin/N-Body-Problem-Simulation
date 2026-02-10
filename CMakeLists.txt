@@ -43,7 +43,7 @@ add_executable(v2_barnes_hut
 target_include_directories(v2_barnes_hut PRIVATE v2_barnes_hut)
 target_link_libraries(v2_barnes_hut m)
 
-# v3: Barnes-Hut with Arena Allocation
+# v3: Barnes-Hut with Arena Allocator
 add_executable(v3_arena 
     v3_arena/galsim.c 
     v3_arena/barnes_hut.c

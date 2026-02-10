@@ -22,3 +22,19 @@ data/outputs/*
 # IDE
 .vscode/
 .DS_Store
+
+# Python & C++ Artifacts
+__pycache__/
+*.dSYM/
+.cache/
+
+# Local Build Metadata (containing absolute paths)
+compile_commands.json
+CMakeCache.txt
+
+# Personal & Career Documents (Privacy)
+docs/RESUME_BULLETS.md
+docs/CV_PERSPECTIVES.md
+personal_*
+private_*
+.env
