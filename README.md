@@ -3,57 +3,33 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Language-C-00599C" alt="C">
   <img src="https://img.shields.io/badge/Parallelism-OpenMP-blue" alt="OpenMP">
-  <img src="https://img.shields.io/badge/Scale-2.5M_Particles-green" alt="Scale">
 </p>
 
-**"How can we leverage algorithmic precision and hardware-aware systems engineering to run million-scale astronomical simulations efficiently on a standard laptop?"**
+<div style="text-align: center;">
+<img src="docs/cinematic_collision.gif" width="400" alt="Galactic Collision GIF">
+</div>
 
-This project documents the journey from a 4,200-particle brute-force simulation to a 2.5-million-particle parallel engine—an ~80x same-scale speedup and a 600x increase in maximum tractable problem size. It is an engineering case study in identifying system bottlenecks and architecting custom memory/cache solutions to break through them.
+  <br>
 
-![Cinematic simulation of a galactic collision](data/outputs/cinematic_collision.gif)
 
----
+This project iteratively extends and accelerates the simulation engine, pushing the boundary from thousands to millions of particles. For a comprehensive engineering report detailing the specific optimizations, memory architecture, and validation results, see [REPORT.md](docs/REPORT.md).
 
-## The Optimization Story
+1. **[v1] Brute-Force Baseline**: $O(N^2)$ ground truth. Directly computed all pairwise forces with no approximation. Serves as the reference for correctness.
+2. **[v2] Barnes-Hut Breakthrough**: Switched to hierarchical space partitioning (Barnes-Hut, $O(N \log N)$). Runtime was limited by memory allocator overhead.
+3. **[v2x] Arena Memory Architecture (Experimental)**: Replaced `malloc` with a Linear Bump Allocator ([implementation](v2x_arena_experimental/ds.h)) to explore memory management optimizations. While theoretically faster for scoped allocations, performance analysis showed limited benefits compared to modern malloc implementations in practical scenarios.
+4. **[v3] Spatial Locality (Morton Curves)**: Reordered particles along a Z-order curve ([implementation](v3_morton/morton.c)) to improve spatial locality, reducing CPU cache misses and increasing throughput.
+5. **[v4] Parallel Load Balancing**: Leveraged OpenMP with K-Means Load Balancing ([implementation](v4_parallel/kmeans.c)) to ensure uniform thread occupancy even in highly non-uniform star clusters, improving parallel efficiency.
 
-My objective was to push the simulation boundary from 4,200 particles to 2.5 million through five evolutionary stages:
-
-1.  **[v1] Brute-Force Baseline**: Established $O(N^2)$ ground truth. Identified that physics math isn't the bottleneck—algorithmic complexity is.
-2.  **[v2] Barnes-Hut Breakthrough**: Switched to hierarchical space partitioning ($O(N \log N)$). Paradoxically, performance hit a wall due to System Allocator Overhead.
-3.  **[v3] Arena Memory Architecture**: Replaced `malloc` with a Linear Bump Allocator (see [implementation](v3_arena/ds.h)). Achieved a 400x reduction in allocation time by aligning memory lifetimes with simulation steps.
-4.  **[v4] Spatial Locality (Morton Curves)**: Addressed CPU cache misses. By reordering particles along a Z-order curve (see [implementation](v4_morton/morton.c)), I ensured that spatial neighbors are also memory neighbors.
-5.  **[v5] Parallel Load Balancing**: Leveraged OpenMP with K-Means Load Balancing (see [implementation](v5_parallel/kmeans.c)) to ensure uniform thread occupancy even in highly non-uniform star clusters.
-
-### Key Results
 | Version   | Breakthrough             | Max Scale | Same-N Speedup (N=50K) |
 | :-------- | :----------------------- | :-------- | :--------------------- |
-| **v1**    | Brute-Force $O(N^2)$     | 4.2K      | 1x (67.1s)             |
-| **v2**    | Barnes-Hut $O(N \log N)$ | 50K       | ~22x (3.1s)            |
-| **v3/v4** | Memory/Cache Optimized   | 500K      | ~26x (2.5s)            |
-| **v5**    | Parallel Engine          | 2.5M      | ~83x (0.81s)           |
+| **v1**    | Brute-Force $O(N^2)$     | 4.2K      | 1x (66.5s)             |
+| **v2**    | Barnes-Hut $O(N \log N)$ | 50K       | ~29x (2.3s)            |
+| **v3**    | Memory/Cache Optimized   | 500K      | ~53x (1.2s)            |
+| **v4**    | Parallel Engine          | 2.5M      | ~214x (0.31s)          |
 
----
+**Numerical Stability**: Supports Velocity Verlet (energy conservation) and RK4 (high-precision inquiry).
 
-## Technical Exhibit
 
-For a comprehensive engineering report detailing the specific optimizations, memory architecture, and validation results, see [REPORT.md](docs/REPORT.md).
-
-- **Numerical Stability**: Supports Velocity Verlet (energy conservation) and RK4 (high-precision inquiry).
-- **Verification**: 
-  - `validate_accuracy.py`: Quantifies approximation errors against the $O(N^2)$ baseline.
-  - `unified_benchmark.sh`: Standardized rig to reproduce optimization claims.
-
----
-
-## Quick Start
-
-Build and run the 2.5M particle simulation:
-
-```bash
-./scripts/unified_benchmark.sh
-```
-
----
 
 ## Project Structure
 
@@ -61,9 +37,9 @@ Build and run the 2.5M particle simulation:
 .
 ├── v1_naive: Naive $O(N^2)$ implementation. (Verified Correct)
 ├── v2_barnes_hut: Basic Barnes-Hut implementation. (Verified Correct)
-├── v3_arena: Optimized memory management using Arena allocator. (Verified Correct)
-├── v4_morton: Optimized memory layout using Z-order (Morton) sorting. (Verified Correct)
-├── v5_parallel: Parallel implementation using Pthreads/OpenMP + K-Means Load Balancing. (Verified Correct)
+├── v2x_arena_experimental: Experimental Arena allocator for memory management
+├── v3_morton: Optimized memory layout using Z-order (Morton) sorting. (Verified Correct)
+├── v4_parallel: Parallel implementation using OpenMP + K-Means Load Balancing. (Verified Correct)
 ├── scripts/            # Unified Benchmark & Validation Suite
 ├── data/               # Structured inputs/outputs
 ├── docs/               # Technical Report & Performance Logs

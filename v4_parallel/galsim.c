@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
   }
 
   NodeArena arena;
-  init_arena(&arena, 200 * N);
+  init_arena(&arena, 1000 * N);
 
   /* Pre-allocate buffers for RK4 */
   // RK4 buffers removed. We use Velocity Verlet for symplectic stability.

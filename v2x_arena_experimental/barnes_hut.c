@@ -30,6 +30,17 @@ static void insert(TNode *node, int idx, double *px, double *py, double *mass,
   }
 
   if (node->is_leaf) {
+    if (node->particle_idx != -1) {
+       double dx = fabs(px[idx] - px[node->particle_idx]);
+       double dy = fabs(py[idx] - py[node->particle_idx]);
+       if (dx < 1e-9 && dy < 1e-9) {
+          double total_mass = node->mass + mass[idx];
+          node->x = (node->x * node->mass + px[idx] * mass[idx]) / total_mass;
+          node->y = (node->y * node->mass + py[idx] * mass[idx]) / total_mass;
+          node->mass = total_mass;
+          return;
+       }
+    }
     int old_idx = node->particle_idx;
     node->is_leaf = 0;
     node->particle_idx = -1;

@@ -29,6 +29,15 @@ static void insert(TNode *node, int idx, double *px, double *py, double *mass,
   }
 
   if (node->PID != -1) {
+    double dx = fabs(px[idx] - px[node->PID]);
+    double dy = fabs(py[idx] - py[node->PID]);
+    if (dx < 1e-9 && dy < 1e-9) {
+       double total_mass = node->mass + mass[idx];
+       node->pos_x = (node->pos_x * node->mass + px[idx] * mass[idx]) / total_mass;
+       node->pos_y = (node->pos_y * node->mass + py[idx] * mass[idx]) / total_mass;
+       node->mass = total_mass;
+       return;
+    }
     int old_idx = node->PID;
     node->PID = -1;
     insert(node, old_idx, px, py, mass, arena);
