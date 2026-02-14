@@ -98,8 +98,9 @@ void barnes_hut(double *px, double *py, double *mass, int N, double *fx,
     if (py[i] > y_max)
       y_max = py[i];
   }
-
-  TNode *root = create_node(x_min, x_max, y_min, y_max, arena);
+  double size = fmax(x_max - x_min, y_max - y_min);
+  TNode *root =
+      create_node(x_min, x_min + size, y_min, y_min + size, arena);
   for (int i = 0; i < N; i++) {
     insert(root, i, px, py, mass, arena);
   }

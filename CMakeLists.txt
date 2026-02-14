@@ -37,32 +37,32 @@ add_executable(v2_barnes_hut
 target_include_directories(v2_barnes_hut PRIVATE v2_barnes_hut)
 target_link_libraries(v2_barnes_hut m)
 
-# v3: Barnes-Hut with Arena Allocator
-add_executable(v3_arena 
+# v2x: Barnes-Hut with Arena Allocator (Experimental)
+add_executable(v2x_arena 
     v2x_arena_experimental/galsim.c 
     v2x_arena_experimental/barnes_hut.c
 )
-target_include_directories(v3_arena PRIVATE v2x_arena_experimental)
-target_link_libraries(v3_arena m)
+target_include_directories(v2x_arena PRIVATE v2x_arena_experimental)
+target_link_libraries(v2x_arena m)
 
-# v4: Barnes-Hut with Arena + Morton Code
-add_executable(v4_morton 
+# v3: Barnes-Hut with Arena + Morton Code
+add_executable(v3_morton 
     v3_morton/galsim.c 
     v3_morton/barnes_hut.c
     v3_morton/morton.c
 )
-target_include_directories(v4_morton PRIVATE v3_morton)
-target_link_libraries(v4_morton m)
+target_include_directories(v3_morton PRIVATE v3_morton)
+target_link_libraries(v3_morton m)
 
-# v5: Final Parallel Version
-add_executable(v5_parallel 
+# v4: Final Parallel Version
+add_executable(v4_parallel 
     v4_parallel/galsim.c 
     v4_parallel/barnes_hut.c
     v4_parallel/morton.c
     v4_parallel/kmeans.c
 )
-target_include_directories(v5_parallel PRIVATE v4_parallel)
-target_link_libraries(v5_parallel PUBLIC OpenMP::OpenMP_C m)
+target_include_directories(v4_parallel PRIVATE v4_parallel)
+target_link_libraries(v4_parallel PUBLIC OpenMP::OpenMP_C m)
 
 # ---------------------------------------------------------
 # End of Configuration

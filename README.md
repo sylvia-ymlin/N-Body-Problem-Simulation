@@ -22,14 +22,23 @@ This project iteratively extends and accelerates the simulation engine, pushing 
 
 | Version   | Breakthrough             | Max Scale | Same-N Speedup (N=50K) |
 | :-------- | :----------------------- | :-------- | :--------------------- |
-| **v1**    | Brute-Force $O(N^2)$     | 4.2K      | 1x (66.5s)             |
-| **v2**    | Barnes-Hut $O(N \log N)$ | 50K       | ~29x (2.3s)            |
-| **v3**    | Memory/Cache Optimized   | 500K      | ~53x (1.2s)            |
-| **v4**    | Parallel Engine          | 2.5M      | ~214x (0.31s)          |
+| **v1**    | Brute-Force $O(N^2)$     | 4.2K      | 1x (74.4s)             |
+| **v2**    | Barnes-Hut $O(N \log N)$ | 50K       | ~28x (2.62s)           |
+| **v3**    | Memory/Cache Optimized   | 500K      | ~57x (1.30s)           |
+| **v4**    | Parallel Engine          | 2.5M      | ~208x (0.36s)          |
 
 **Numerical Stability**: Supports Velocity Verlet (energy conservation) and RK4 (high-precision inquiry).
 
+## Quick Start
 
+```bash
+# 1. Build
+mkdir build && cd build
+cmake .. && make
+
+# 2. Run Unified Benchmark (Tests all versions)
+../scripts/unified_benchmark.sh
+```
 
 ## Project Structure
 

@@ -17,11 +17,11 @@ if [ ! -f "$INPUT" ]; then
     python3 scripts/generate_data.py $N $INPUT disk
 fi
 
-echo "--- N-Body Performance Journey: v1 to v5 ---"
+echo "--- N-Body Performance Journey: v1 to v4 ---"
 echo "Configuration: N=$N, Steps=$STEPS, Threads=$THREADS"
 echo "--------------------------------------------"
 
-VERSIONS=("v1_naive" "v2_barnes_hut" "v3_arena" "v4_morton" "v5_parallel")
+VERSIONS=("v1_naive" "v2_barnes_hut" "v2x_arena" "v3_morton" "v4_parallel")
 
 for VER in "${VERSIONS[@]}"; do
     EXE="./build/$VER"
