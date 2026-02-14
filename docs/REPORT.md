@@ -54,7 +54,7 @@ def compute_force(particle, node, theta):
 ### Phase II: Memory Architecture (v3)
 *   **Initial Insight:** Tree nodes have a strictly scoped lifetime: they are created at the start of a step and destroyed at the end. General-purpose allocators (which handle fragmentation and varying lifetimes) were hypothesized to be over-engineered for this use case.
 *   **Optimization:** I implemented a Linear Arena Allocator with pre-allocated contiguous memory blocks. Allocation was designed as a simple pointer increment ($O(1)$), with instantaneous deallocation via pointer reset.
-*   **Results (Mac M3):** Benchmarking on Apple Silicon (M3) revealed consistent performance benefits due to reduced `malloc` overhead and better cache locality.
+*   **Results:** The Arena Allocator reduces memory management overhead by replacing general-purpose `malloc` with a linear pointer bump. This ensures tree nodes are stored contiguously, improving cache locality and delivering consistent performance gains.
 
     | Particle Count (N) | System Malloc (v2) | Arena Allocator (v3) | Speedup |
     |-------------------|-------------------|---------------------|---------|
