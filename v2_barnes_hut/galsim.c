@@ -40,6 +40,10 @@ int main(int argc, char *argv[]) {
   gettimeofday(&start, NULL);
 
   FILE *movie_file = fopen("movie.gal", "wb");
+  
+  // Pre-compute initial forces
+  barnes_hut(px, py, mass, N, fx, fy, theta);
+
   for (int step = 0; step < nsteps; step++) {
     if (step % 1 == 0) {
       for (int i = 0; i < N; i++) {
@@ -48,10 +52,7 @@ int main(int argc, char *argv[]) {
         fwrite(&mass[i], 8, 1, movie_file);
       }
     }
-    // 1. Initial Force
-    barnes_hut(px, py, mass, N, fx, fy, theta);
-
-    // 2. Velocity Verlet
+    // 1. First half-kick and Drift (Velocity Verlet)
     for (int i = 0; i < N; i++) {
       vx[i] += 0.5 * dt * fx[i] / mass[i];
       vy[i] += 0.5 * dt * fy[i] / mass[i];

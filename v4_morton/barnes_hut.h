@@ -4,6 +4,6 @@
 #include "ds.h"
 
 void barnes_hut(double *px, double *py, double *mass, int N, double *fx,
-                double *fy, double THETA_MAX, NodeArena *arena);
+                double *fy, double THETA_MAX, int use_arena);
 
 #endif

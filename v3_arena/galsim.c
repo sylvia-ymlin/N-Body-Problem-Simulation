@@ -1,5 +1,4 @@
 #include "barnes_hut.h"
-#include "morton.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -22,38 +21,20 @@ int main(int argc, char *argv[]) {
   double *mass = malloc(N * sizeof(double));
   double *vx = malloc(N * sizeof(double));
   double *vy = malloc(N * sizeof(double));
-  // double *brightness = malloc(N * sizeof(double));
   double *fx = malloc(N * sizeof(double));
   double *fy = malloc(N * sizeof(double));
 
   FILE *f = fopen(filename, "rb");
-  if (!f) {
-    printf("Error opening file!\n");
-    return 1;
-  }
   for (int i = 0; i < N; i++) {
     fread(&px[i], 8, 1, f);
     fread(&py[i], 8, 1, f);
     fread(&mass[i], 8, 1, f);
     fread(&vx[i], 8, 1, f);
     fread(&vy[i], 8, 1, f);
+
     fseek(f, 8, SEEK_CUR); // Skip brightness
   }
   fclose(f);
-
-  // Initial Morton sorting for spatial locality
-  double x_min = px[0], x_max = px[0], y_min = py[0], y_max = py[0];
-  for (int i = 1; i < N; i++) {
-    if (px[i] < x_min)
-      x_min = px[i];
-    if (px[i] > x_max)
-      x_max = px[i];
-    if (py[i] < y_min)
-      y_min = py[i];
-    if (py[i] > y_max)
-      y_max = py[i];
-  }
-  z_order_sort(px, py, mass, vx, vy, N, x_min, x_max, y_min, y_max);
 
   NodeArena arena;
   init_arena(&arena, 1000 * N);
@@ -61,11 +42,21 @@ int main(int argc, char *argv[]) {
   struct timeval start, end;
   gettimeofday(&start, NULL);
 
-  for (int step = 0; step < nsteps; step++) {
-    // 1. Initial Force
-    barnes_hut(px, py, mass, N, fx, fy, theta, &arena);
+  FILE *movie_file = fopen("movie.gal", "wb");
+  
+  // Pre-compute initial forces (moved outside loop)
+  barnes_hut(px, py, mass, N, fx, fy, theta, &arena);
 
-    // 2. Velocity Verlet
+  for (int step = 0; step < nsteps; step++) {
+    if (step % 1 == 0) {
+      for (int i = 0; i < N; i++) {
+        fwrite(&px[i], 8, 1, movie_file);
+        fwrite(&py[i], 8, 1, movie_file);
+        fwrite(&mass[i], 8, 1, movie_file);
+      }
+    }
+    
+    // 1. First half-kick and Drift (Velocity Verlet)
     for (int i = 0; i < N; i++) {
       vx[i] += 0.5 * dt * fx[i] / mass[i];
       vy[i] += 0.5 * dt * fy[i] / mass[i];
@@ -73,26 +64,21 @@ int main(int argc, char *argv[]) {
       py[i] += dt * vy[i];
     }
 
-    // 3. Recompute Force
+    // 2. Recompute Force
     barnes_hut(px, py, mass, N, fx, fy, theta, &arena);
 
-    // 4. Final Velocity
+    // 3. Final Velocity
     for (int i = 0; i < N; i++) {
       vx[i] += 0.5 * dt * fx[i] / mass[i];
       vy[i] += 0.5 * dt * fy[i] / mass[i];
     }
-
-    // Optionally re-sort every few steps to maintain locality
-    if (step % 10 == 0 && step > 0) {
-      /* z_order_sort(px, py, mass, vx, vy, N, x_min, x_max, y_min,
-                   y_max); */
-    }
   }
+  fclose(movie_file);
 
   gettimeofday(&end, NULL);
   double elapsed =
       (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
-  printf("Barnes-Hut (Arena + Morton) took %f seconds\n", elapsed);
+  printf("Barnes-Hut (Arena) took %f seconds\n", elapsed);
 
   FILE *rfile = fopen("result.gal", "wb");
   if (rfile) {
@@ -112,7 +98,6 @@ int main(int argc, char *argv[]) {
   free(mass);
   free(vx);
   free(vy);
-  // free(brightness);
   free(fx);
   free(fy);
   return 0;

@@ -15,13 +15,13 @@
  *  -------------------------------------------------- */
 void barnes_hut(double *pos_x, double *pos_y, double *mass, int N, int *cluster,
                 double *region, int *clusters_size, int k, double *fx,
-                double *fy, int n_threads, double THETA_MAX, NodeArena *arena);
+                double *fy, int n_threads, double THETA_MAX, int use_arena);
 
 /** Create a new tree node
  * According the position of the subsquare, determine the region of it.
  * -------------------------------------------------- */
-TNode *create_new_TNode(NodeArena *arena, int index, double LB, double RB,
-                        double DB, double UB);
+TNode *create_new_TNode(int index, double LB, double RB,
+                        double DB, double UB, NodeArena *arena);
 
 /** Insert the particle into the tree
  * If the node represents a particle, then split the node and insert the
@@ -33,8 +33,8 @@ TNode *create_new_TNode(NodeArena *arena, int index, double LB, double RB,
  * into it.
  * - else, recursively insert the particle into the child node.
  * -------------------------------------------------- */
-int insert(NodeArena *arena, TNode *tNode, double pos_x, double pos_y,
-           double mass, int PID);
+int insert(TNode *tNode, double pos_x, double pos_y,
+           double mass, int PID, NodeArena *arena);
 
 /** Compute the force between the particle and the node
  * If the node is a leaf node, directly calculate the force.
@@ -46,10 +46,5 @@ int insert(NodeArena *arena, TNode *tNode, double pos_x, double pos_y,
 void compute_force(double pos_x, double pos_y, double mass, int PID,
                    TNode *root, double *fx, double *fy, double G,
                    double THETA_MAX);
-
-/* Arena Management Functions */
-void init_arena(NodeArena *arena, size_t capacity);
-void free_arena(NodeArena *arena);
-void reset_arena(NodeArena *arena);
 
 #endif

@@ -1,10 +1,21 @@
 #include "barnes_hut.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-static TNode *create_node(double LB, double RB, double DB, double UB,
-                          NodeArena *arena) {
-  TNode *node = arena_alloc(arena);
+static TNode *create_node(double LB, double RB, double DB, double UB, NodeArena *arena) {
+  TNode *node;
+  if (arena) {
+    node = arena_alloc(arena);
+  } else {
+    node = (TNode *)malloc(sizeof(TNode));
+  }
+  
+  if (!node) {
+      fprintf(stderr, "Memory allocation failed!\n");
+      exit(1);
+  }
   node->LB = LB;
   node->RB = RB;
   node->DB = DB;
@@ -18,8 +29,17 @@ static TNode *create_node(double LB, double RB, double DB, double UB,
   return node;
 }
 
-static void insert(TNode *node, int idx, double *px, double *py, double *mass,
-                   NodeArena *arena) {
+static void free_tree(TNode *node) {
+  if (!node) return;
+  for (int i = 0; i < 4; i++) {
+    if (node->child[i]) {
+      free_tree(node->child[i]);
+    }
+  }
+  free(node);
+}
+
+static void insert(TNode *node, int idx, double *px, double *py, double *mass, NodeArena *arena) {
   if (node->PID == -1 && node->mass == 0) {
     node->PID = idx;
     node->pos_x = px[idx];
@@ -65,7 +85,7 @@ static void insert(TNode *node, int idx, double *px, double *py, double *mass,
 static void compute_force(TNode *node, int idx, double *px, double *py,
                           double *mass, double *fx, double *fy,
                           double THETA_MAX, double G) {
-  if (!node || node->mass == 0 || node->PID == idx)
+  if (!node || node->mass == 0 || (node->PID == idx && node->PID != -1))
     return;
 
   double dx = node->pos_x - px[idx];
@@ -79,14 +99,20 @@ static void compute_force(TNode *node, int idx, double *px, double *py,
     *fy += f * dy;
   } else {
     for (int i = 0; i < 4; i++) {
-      compute_force(node->child[i], idx, px, py, mass, fx, fy, THETA_MAX, G);
+      if (node->child[i])
+        compute_force(node->child[i], idx, px, py, mass, fx, fy, THETA_MAX, G);
     }
   }
 }
 
 void barnes_hut(double *px, double *py, double *mass, int N, double *fx,
-                double *fy, double THETA_MAX, NodeArena *arena) {
-  reset_arena(arena);
+                double *fy, double THETA_MAX, int use_arena) {
+  
+  for (int i = 0; i < N; i++) {
+    fx[i] = 0;
+    fy[i] = 0;
+  }
+
   double x_min = px[0], x_max = px[0], y_min = py[0], y_max = py[0];
   for (int i = 1; i < N; i++) {
     if (px[i] < x_min)
@@ -98,17 +124,45 @@ void barnes_hut(double *px, double *py, double *mass, int N, double *fx,
     if (py[i] > y_max)
       y_max = py[i];
   }
-  double size = fmax(x_max - x_min, y_max - y_min);
-  TNode *root =
-      create_node(x_min, x_min + size, y_min, y_min + size, arena);
+  
+  // Square region
+  double dx = x_max - x_min;
+  double dy = y_max - y_min;
+  double d = (dx > dy) ? dx : dy;
+  x_max = x_min + d;
+  y_max = y_min + d;
+  
+  // Padding
+  x_min -= d * 0.05;
+  x_max += d * 0.05;
+  y_min -= d * 0.05;
+  y_max += d * 0.05;
+
+  NodeArena arena_struct;
+  NodeArena *arena = NULL;
+  
+  if (use_arena) {
+    // Heuristic: 2N nodes is usually enough for Barnes-Hut
+    // But let's be safe with 4N or even more to avoid realloc (we don't have realloc in simple arena)
+    init_arena(&arena_struct, N * 10); // Safe upper bound
+    arena = &arena_struct;
+  }
+
+  TNode *root = create_node(x_min, x_max, y_min, y_max, arena);
+  
   for (int i = 0; i < N; i++) {
     insert(root, i, px, py, mass, arena);
   }
 
   double G = 100.0 / N;
   for (int i = 0; i < N; i++) {
-    fx[i] = 0;
-    fy[i] = 0;
     compute_force(root, i, px, py, mass, &fx[i], &fy[i], THETA_MAX, G);
+  }
+
+  // IMPORTANT: Free the tree
+  if (use_arena) {
+    free_arena(arena);
+  } else {
+    free_tree(root);
   }
 }

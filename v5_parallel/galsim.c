@@ -7,10 +7,10 @@
 void compute_accelerations(int N, double *pos_x, double *pos_y, double *mass,
                            double *mass_inver, int *clusters,
                            int *clusters_size, int k, int n_threads,
-                           double theta_max, NodeArena *arena, double *fx,
-                           double *fy, double *ax, double *ay, double *region) {
+                           double theta_max, double *fx,
+                           double *fy, double *ax, double *ay, double *region, int use_arena) {
   barnes_hut(pos_x, pos_y, mass, N, clusters, region, clusters_size, k, fx, fy,
-             n_threads, theta_max, arena);
+             n_threads, theta_max, use_arena);
   for (int i = 0; i < N; i++) {
     ax[i] = fx[i] * mass_inver[i];
     ay[i] = fy[i] * mass_inver[i];
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (argc < 8) {
-    printf("Usage: N filename nsteps delta_t n_threads theta_max k\n");
+    printf("Usage: N filename nsteps delta_t n_threads theta_max k [use_arena]\n");
     return 1;
   }
 
@@ -36,6 +36,10 @@ int main(int argc, char *argv[]) {
   int n_threads = atoi(argv[5]);
   double THETA_MAX = atof(argv[6]);
   int k = atoi(argv[7]);
+  int use_arena = 0;
+  if (argc > 8) {
+    use_arena = atoi(argv[8]);
+  }
 
   /* 2D Particle Data */
   double *pos_x = (double *)malloc(N * sizeof(double));
@@ -116,11 +120,15 @@ int main(int argc, char *argv[]) {
     kmeans(pos_x, pos_y, N, clusters, clusters_size, k, n_threads);
   }
 
-  NodeArena arena;
-  init_arena(&arena, 1000 * N);
+
 
   /* Pre-allocate buffers for RK4 */
   // RK4 buffers removed. We use Velocity Verlet for symplectic stability.
+
+  /* Pre-compute initial forces before the time loop */
+  compute_accelerations(N, pos_x, pos_y, mass, mass_inver, clusters,
+                        clusters_size, k, n_threads, THETA_MAX, fx,
+                        fy, acc_x, acc_y, region, use_arena);
 
   /* Simulation Loop */
   FILE *movie_file = fopen("movie.gal", "wb");
@@ -137,9 +145,9 @@ int main(int argc, char *argv[]) {
     /* Velocity Verlet Integration */
     // 1. First half-kick: v += 0.5 * a * dt
     // 2. Drift: x += v * dt
-    compute_accelerations(N, pos_x, pos_y, mass, mass_inver, clusters,
-                          clusters_size, k, n_threads, THETA_MAX, &arena, fx,
-                          fy, acc_x, acc_y, region);
+    
+    // Note: compute_accelerations is removed from here because acc_x/acc_y 
+    // are carried over from the previous step (or initialization)
 
     for (int i = 0; i < N; i++) {
       vx[i] += 0.5 * delta_t * acc_x[i];
@@ -150,8 +158,8 @@ int main(int argc, char *argv[]) {
 
     // 3. Recompute forces at new positions
     compute_accelerations(N, pos_x, pos_y, mass, mass_inver, clusters,
-                          clusters_size, k, n_threads, THETA_MAX, &arena, fx,
-                          fy, acc_x, acc_y, region);
+                          clusters_size, k, n_threads, THETA_MAX, fx,
+                          fy, acc_x, acc_y, region, use_arena);
 
     // 4. Second half-kick: v += 0.5 * a * dt
     for (int i = 0; i < N; i++) {
@@ -183,7 +191,6 @@ int main(int argc, char *argv[]) {
   printf("Simulation took %7.8f seconds.\n", (get_wall_seconds() - time_tol));
 #endif
 
-  free_arena(&arena);
   free(pos_x);
   free(pos_y);
   free(mass);

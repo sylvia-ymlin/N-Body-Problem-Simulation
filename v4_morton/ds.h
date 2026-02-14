@@ -12,20 +12,23 @@ typedef struct TNode {
   int PID;
 } TNode;
 
-typedef struct NodeArena {
-  TNode *nodes;
-  size_t capacity;
+typedef struct {
+  TNode *buffer;
+  size_t size;
   size_t used;
 } NodeArena;
 
-static inline void init_arena(NodeArena *arena, size_t capacity) {
-  arena->nodes = (TNode *)malloc(capacity * sizeof(TNode));
-  arena->capacity = capacity;
+static inline void init_arena(NodeArena *arena, size_t size) {
+  arena->buffer = (TNode *)malloc(size * sizeof(TNode));
+  arena->size = size;
   arena->used = 0;
 }
 
 static inline void free_arena(NodeArena *arena) {
-  free(arena->nodes);
+  if (arena->buffer) {
+    free(arena->buffer);
+    arena->buffer = NULL;
+  }
 }
 
 static inline void reset_arena(NodeArena *arena) {
@@ -33,10 +36,10 @@ static inline void reset_arena(NodeArena *arena) {
 }
 
 static inline TNode *arena_alloc(NodeArena *arena) {
-  if (arena->used < arena->capacity) {
-    return &arena->nodes[arena->used++];
+  if (arena && arena->used < arena->size) {
+    return &arena->buffer[arena->used++];
   }
-  return NULL;
+  return NULL; // Fallback or error
 }
 
 #endif

@@ -49,6 +49,9 @@ int main(int argc, char *argv[]) {
   FILE *movie_file = fopen("movie.gal", "wb");
   /* Simulation Loop */
   for (int s = 0; s < nsteps; s++) {
+    // Print progress every step
+    printf("Step %d/%d\n", s + 1, nsteps);
+
     // Save frame for animation
     if (s % 10 == 0) {
       for (int i = 0; i < N; i++) {
