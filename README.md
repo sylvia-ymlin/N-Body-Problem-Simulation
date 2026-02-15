@@ -13,11 +13,11 @@
 
 This project iteratively extends and accelerates the simulation engine, pushing the boundary from thousands to millions of particles. For a comprehensive engineering report detailing the specific optimizations, memory architecture, and validation results, see [REPORT.md](docs/REPORT.md).
 
-1. **[v1] Brute-Force Baseline**: $O(N^2)$ ground truth. Directly computed all pairwise forces with no approximation. Serves as the reference for correctness.
-2. **[v2] Barnes-Hut Algorithm**: Reduced computational complexity from $O(N^2)$ to $O(N \log N)$ by approximating distant particle clusters as single nodes. This enabled scaling from thousands to tens of thousands of particles.
-3. **[v3] Arena Memory Architecture**: Implemented a Linear Bump Allocator to explore scoped memory management. While experimental, it provides consistent speedups on Mac M3 architectures.
-4. **[v4] Spatial Locality (Morton Curves)**: Reordered particles along a Z-order curve to improve spatial locality, reducing CPU cache misses and increasing throughput. Now supports optional Arena allocator.
-5. **[v5] Parallel Load Balancing**: Leveraged OpenMP with K-Means Load Balancing to ensure uniform thread occupancy, improving parallel efficiency. Now supports optional Arena allocator.
+1. **[v1] Brute-Force Baseline**: $O(N^2)$ ground truth. Directly computes all pairwise forces with no approximation. Serves as the numerical reference.
+2. **[v2] Barnes-Hut Algorithm**: Reduces computational complexity to $O(N \log N)$ by approximating distant particle clusters via a QuadTree. Enables scaling to tens of thousands of particles.
+3. **[v3] Arena Memory Architecture**: Replaces `malloc` with an $O(1)$ Linear Bump Allocator. Eliminates metadata fragmentation and aligns tree nodes in memory to maximize Hardware Prefetcher efficiency.
+4. **[v4] Spatial Locality (Morton Curves)**: Maps 2D coordinates to a 1D Z-order curve before tree construction. This enforces strict memory contiguity, boosting Operational Intensity and shifting the CPU towards throughput-optimization.
+5. **[v5] Parallel Load Balancing**: Mitigates severe astrophysical load imbalances by decoupling spatial locality from computational weight. Uses K-Means clustering paired with OpenMP `dynamic` scheduling for efficient work-stealing.
 
 | Version   | Breakthrough             | Same-N Speedup (N=50K) |
 | :-------- | :----------------------- | :--------------------- |
