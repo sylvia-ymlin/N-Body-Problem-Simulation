@@ -1,10 +1,12 @@
 #include "kmeans.h"
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-// K-Means Load Balancing: groups particles into spatially coherent clusters
-// to maximize cache reuse and balance OpenMP workloads.
-bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
-            int *clusters_size, int k, int n_threads) {
-
+// K-Means Load Balancing
+bool kmeans(ParticleSystem *sys, int *clustersP, int *clusters_size, int k,
+            int n_threads) {
+  int N = sys->N;
   CNode clusters[k];
   int *labels = (int *)malloc(N * sizeof(int));
   if (!labels) {
@@ -18,8 +20,9 @@ bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
   /* Initialize the clusters centroids. */
   for (int i = 0; i < k; i++) {
     clusters[i].count = 0;
-    clusters[i].ctr_x = pos_x[i];
-    clusters[i].ctr_y = pos_y[i];
+    clusters[i].ctr_x =
+        sys->pos_x[i]; // Use first k particles as initial centroids
+    clusters[i].ctr_y = sys->pos_y[i];
   }
 
   /* Iterate until the clusters centroids converge */
@@ -35,15 +38,24 @@ bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
     iterations++;
 
     /* Assign the particles to the clusters. */
-    assignLabels(pos_x, pos_y, clusters, labels, k, N, n_threads);
+    assignLabels(sys, clusters, labels, k, N, n_threads);
 
     /* Update clusters */
-    getCentroids(pos_x, pos_y, clusters, labels, k, N);
+    getCentroids(sys, clusters, labels, k, N);
   }
 
   /* Group particles into clusters (CSR-like packing) */
   int *cnt = (int *)calloc(k, sizeof(int));
   int *offsets = (int *)malloc(k * sizeof(int));
+
+  if (!cnt || !offsets) {
+    free(labels);
+    if (cnt)
+      free(cnt);
+    if (offsets)
+      free(offsets);
+    return false;
+  }
 
   // 1. Count sizes
   for (int i = 0; i < k; i++)
@@ -59,7 +71,9 @@ bool kmeans(double *pos_x, double *pos_y, int N, int *clustersP,
   // 3. Fill packed array
   for (int i = 0; i < N; i++) {
     int c = labels[i];
-    clustersP[offsets[c] + cnt[c]] = i;
+    if (offsets[c] + cnt[c] < N) {
+      clustersP[offsets[c] + cnt[c]] = i;
+    }
     cnt[c]++;
   }
 
@@ -85,8 +99,8 @@ bool converged(CNode *clusters, double *old_clusters_ctr_x,
   return true;
 }
 
-void getCentroids(double *pos_x, double *pos_y, CNode *clusters, int *labels,
-                  int k, int N) {
+void getCentroids(ParticleSystem *sys, CNode *clusters, int *labels, int k,
+                  int N) {
   /* reset the clusters. */
   for (int i = 0; i < k; i++) {
     clusters[i].ctr_x = 0;
@@ -96,16 +110,29 @@ void getCentroids(double *pos_x, double *pos_y, CNode *clusters, int *labels,
 
   /* update the clusters. */
   for (int i = 0; i < N; i++) {
-    clusters[labels[i]].ctr_x += pos_x[i];
-    clusters[labels[i]].ctr_y += pos_y[i];
-    clusters[labels[i]].count++;
+    int label = labels[i];
+    clusters[label].ctr_x += sys->pos_x[i];
+    clusters[label].ctr_y += sys->pos_y[i];
+    clusters[label].count++;
   }
 
   /* calculate the centroids. */
   for (int i = 0; i < k; i++) {
     if (clusters[i].count == 0) {
-      clusters[i].ctr_x = pos_x[i];
-      clusters[i].ctr_y = pos_y[i];
+      // If cluster is empty, keep previous position or reset?
+      // Code in v5 kept it (or re-initialized to something? No, it used
+      // pos_x[i] in init, dealing with empty clusters here is tricky). v5 code:
+      /*
+      if (clusters[i].count == 0) {
+        clusters[i].ctr_x = pos_x[i];  <-- This looks suspicious if i >= N. But
+      i < k. clusters[i].ctr_y = pos_y[i];
+      }
+      */
+      // I will replicate v5 logic, assuming k <= N.
+      if (i < N) {
+        clusters[i].ctr_x = sys->pos_x[i];
+        clusters[i].ctr_y = sys->pos_y[i];
+      }
     } else {
       clusters[i].ctr_x /= clusters[i].count;
       clusters[i].ctr_y /= clusters[i].count;
@@ -113,16 +140,18 @@ void getCentroids(double *pos_x, double *pos_y, CNode *clusters, int *labels,
   }
 }
 
-void assignLabels(double *pos_x, double *pos_y, CNode *clusters, int *labels,
-                  int k, int N, int n_threads) {
+void assignLabels(ParticleSystem *sys, CNode *clusters, int *labels, int k,
+                  int N, int n_threads) {
+#ifdef _OPENMP
 #pragma omp parallel for num_threads(n_threads)
+#endif
   for (int i = 0; i < N; i++) {
     double min_dist = INFINITY;
     int label = 0;
     for (int j = 0; j < k; j++) {
-      double dist =
-          (pos_x[i] - clusters[j].ctr_x) * (pos_x[i] - clusters[j].ctr_x) +
-          (pos_y[i] - clusters[j].ctr_y) * (pos_y[i] - clusters[j].ctr_y);
+      double dx = sys->pos_x[i] - clusters[j].ctr_x;
+      double dy = sys->pos_y[i] - clusters[j].ctr_y;
+      double dist = dx * dx + dy * dy;
       if (dist < min_dist) {
         min_dist = dist;
         label = j;

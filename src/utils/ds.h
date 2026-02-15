@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-
 /* Maximum iterations for k-means clustering. */
 #define MAX_ITERATIONS 50
 
@@ -24,7 +23,7 @@ typedef struct TNode {
   double pos_x;
   double pos_y;
   double mass;
-  int PID;
+  int PID; // Particle ID, or -1 for internal node
 } TNode;
 
 /* Structure to represent a cluster node. */
@@ -42,6 +41,10 @@ typedef struct {
 
 static inline void init_arena(NodeArena *arena, size_t size) {
   arena->buffer = (TNode *)malloc(size * sizeof(TNode));
+  if (arena->buffer == NULL) {
+    fprintf(stderr, "Error: Failed to allocate arena of size %zu\n", size);
+    exit(1);
+  }
   arena->size = size;
   arena->used = 0;
 }
@@ -53,9 +56,7 @@ static inline void free_arena(NodeArena *arena) {
   }
 }
 
-static inline void reset_arena(NodeArena *arena) {
-  arena->used = 0;
-}
+static inline void reset_arena(NodeArena *arena) { arena->used = 0; }
 
 static inline TNode *arena_alloc(NodeArena *arena) {
   if (arena && arena->used < arena->size) {
