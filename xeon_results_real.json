@@ -1,0 +1,66 @@
+{
+    "strong": [
+        {
+            "runtime": 4.6,
+            "force_time": 2.1876,
+            "threads": 1,
+            "N": 100000
+        },
+        {
+            "runtime": 5.58,
+            "force_time": 2.7784,
+            "threads": 2,
+            "N": 100000
+        },
+        {
+            "runtime": 5.88,
+            "force_time": 2.7012,
+            "threads": 4,
+            "N": 100000
+        },
+        {
+            "runtime": 6.88,
+            "force_time": 3.0698,
+            "threads": 8,
+            "N": 100000
+        },
+        {
+            "runtime": 8.87,
+            "force_time": 3.9756,
+            "threads": 16,
+            "N": 100000
+        }
+    ],
+    "weak": [
+        {
+            "runtime": 4.88,
+            "force_time": 2.487,
+            "threads": 1,
+            "N": 100000
+        },
+        {
+            "runtime": 12.81,
+            "force_time": 5.5932,
+            "threads": 2,
+            "N": 200000
+        },
+        {
+            "runtime": 31.7,
+            "force_time": 14.2866,
+            "threads": 4,
+            "N": 400000
+        },
+        {
+            "runtime": 86.91,
+            "force_time": 41.1845,
+            "threads": 8,
+            "N": 800000
+        },
+        {
+            "runtime": 228.87,
+            "force_time": 109.894,
+            "threads": 16,
+            "N": 1600000
+        }
+    ]
+}
