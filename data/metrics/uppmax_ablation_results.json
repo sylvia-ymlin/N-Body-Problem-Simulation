@@ -1,0 +1,51 @@
+{
+    "platform": "p41.uppmax.uu.se",
+    "kmeans_ablation": [
+        {
+            "runtime": 0.05,
+            "force_time": 0.0094,
+            "tree_time": 0.0104,
+            "kmeans_time": 0.0,
+            "schedule": "dynamic,128",
+            "label": "morton_no_kmeans",
+            "k": 0,
+            "threads": 8,
+            "N": 50000
+        },
+        {
+            "runtime": 0.08,
+            "force_time": 0.0152,
+            "tree_time": 0.0131,
+            "kmeans_time": 0.0132,
+            "schedule": "dynamic,128",
+            "label": "kmeans_32",
+            "k": 32,
+            "threads": 8,
+            "N": 50000
+        }
+    ],
+    "schedule_ablation": [
+        {
+            "runtime": 0.09,
+            "force_time": 0.0107,
+            "tree_time": 0.0221,
+            "kmeans_time": 0.0,
+            "schedule": "static,128",
+            "label": "static_128",
+            "threads": 16,
+            "N": 100000,
+            "chunk": 128
+        },
+        {
+            "runtime": 0.09,
+            "force_time": 0.0102,
+            "tree_time": 0.0221,
+            "kmeans_time": 0.0,
+            "schedule": "dynamic,128",
+            "label": "dynamic_128",
+            "threads": 16,
+            "N": 100000,
+            "chunk": 128
+        }
+    ]
+}

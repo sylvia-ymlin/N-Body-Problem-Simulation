@@ -1,0 +1,149 @@
+{
+    "platform": "p87.uppmax.uu.se",
+    "diagnostic": [
+        {
+            "runtime": 0.0,
+            "force_time": 0.0,
+            "v": 1,
+            "n": 128,
+            "threads": 1,
+            "theta": 0.0
+        },
+        {
+            "runtime": 0.0,
+            "force_time": 0.0,
+            "v": 2,
+            "n": 128,
+            "threads": 1,
+            "theta": 0.0
+        },
+        {
+            "runtime": 0.19,
+            "force_time": 0.0,
+            "v": 1,
+            "n": 5000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.02,
+            "force_time": 0.0,
+            "v": 2,
+            "n": 5000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.76,
+            "force_time": 0.0,
+            "v": 1,
+            "n": 10000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.06,
+            "force_time": 0.0,
+            "v": 2,
+            "n": 10000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.36,
+            "force_time": 0.0,
+            "v": 3,
+            "n": 50000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.21,
+            "force_time": 0.0,
+            "v": 4,
+            "n": 50000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.16,
+            "force_time": 0.0699,
+            "v": 5,
+            "n": 50000,
+            "threads": 1,
+            "theta": 0.5
+        },
+        {
+            "runtime": 0.04,
+            "force_time": 0.0054,
+            "v": 5,
+            "n": 50000,
+            "threads": 16,
+            "theta": 0.5
+        }
+    ],
+    "strong": [
+        {
+            "runtime": 0.36,
+            "force_time": 0.1533,
+            "threads": 1,
+            "N": 100000
+        },
+        {
+            "runtime": 0.21,
+            "force_time": 0.0776,
+            "threads": 2,
+            "N": 100000
+        },
+        {
+            "runtime": 0.14,
+            "force_time": 0.0396,
+            "threads": 4,
+            "N": 100000
+        },
+        {
+            "runtime": 0.11,
+            "force_time": 0.0204,
+            "threads": 8,
+            "N": 100000
+        },
+        {
+            "runtime": 0.09,
+            "force_time": 0.0111,
+            "threads": 16,
+            "N": 100000
+        }
+    ],
+    "weak": [
+        {
+            "runtime": 0.36,
+            "force_time": 0.153,
+            "threads": 1,
+            "N": 100000
+        },
+        {
+            "runtime": 0.44,
+            "force_time": 0.1677,
+            "threads": 2,
+            "N": 200000
+        },
+        {
+            "runtime": 0.59,
+            "force_time": 0.1813,
+            "threads": 4,
+            "N": 400000
+        },
+        {
+            "runtime": 0.85,
+            "force_time": 0.1937,
+            "threads": 8,
+            "N": 800000
+        },
+        {
+            "runtime": 1.36,
+            "force_time": 0.2071,
+            "threads": 16,
+            "N": 1600000
+        }
+    ]
+}
