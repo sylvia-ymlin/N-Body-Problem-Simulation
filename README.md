@@ -34,6 +34,12 @@ The main workflow is the same for every version:
 
 `v4` also contains an optional K-means reordering path. It is kept as an experiment for comparison, but it is not the main recommended configuration.
 
+### Algorithm: Barnes-Hut Quadtree
+
+The Barnes-Hut algorithm reduces the $O(N^2)$ complexity of gravity calculation to $O(N \log N)$ by using a quadtree (in 2D) to decompose the simulation domain. Distant clusters of particles are approximated as a single point mass (the center of mass), significantly reducing the number of force evaluations without sacrificing critical accuracy.
+
+![Barnes-Hut Quadtree Logic](figures/barnes_hut_logic.png)
+
 ## Project Structure
 
 ```text
@@ -154,11 +160,27 @@ The biggest improvement comes from switching from exact all-pairs force calculat
 
 These numbers are from the included serial comparison at `N=10k`, `nsteps=200`, `dt=1e-5`.
 
+#### Locality and Morton Ordering
+
+The jump in performance from `v3` to `v4` is driven by better cache utilization. By sorting particles using a Morton (Z-order) curve, we ensure that particles near each other in space are also near each other in memory. This synchronization between spatial and memory locality drastically reduces cache misses during tree traversal.
+
+![Locality Ablation Study](figures/locality_ablation.png)
+
 ### Parallel Version
 
 For `v5`, the force loop scales well at first, but total speedup eventually levels off because tree construction and Morton ordering are still serial.
 
 At `N=100000`, the saved strong-scaling run reaches about `5.1x` end-to-end speedup by `16` to `20` threads. After that, the serial part of the program becomes the main bottleneck.
+
+#### Scaling Performance Analysis
+
+The performance of `v5` is analyzed through strong and weak scaling metrics:
+
+- **Strong Scaling**: Measures how runtime decreases as more threads are added for a fixed problem size ($N=100k$). The speedup follows Amdahl's Law, eventually hitting a plateau because tree construction and Morton sorting remain serial.
+- **Weak Scaling**: Measures how the system handles increasing workloads ($N$ increasing with thread count). This provides insight into the overhead of parallel management as the system size grows.
+
+![Strong Scaling Result](figures/strong_scaling.png)
+![Weak Scaling Result](figures/weak_scaling.png)
 
 ### Correctness Check
 
